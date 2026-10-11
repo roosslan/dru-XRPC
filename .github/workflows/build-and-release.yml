@@ -40,11 +40,44 @@ jobs:
           if (-not (Test-Path $exe)) { throw "Не найден exe: $exe" }
           Write-Host "OK: $((Get-Item $exe).Length) байт"
 
-      - name: Create dru-xrpc.cab
+      - name: Create dru-xrpc.cab (exe + dependencies)
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force dist | Out-Null
-          makecab /V1 bin\Release\drU6-XRPC.exe dist\dru-xrpc.cab
+          $stage = 'dist\contents'
+          New-Item -ItemType Directory -Force dist, $stage | Out-Null
+
+          # exe + все runtime-зависимости. В bin\Release уже лежат и Required\*.dll,
+          # и stdole.dll (в Required его нет, но он нужен). .config исключаем —
+          # там Drupal.ServiceKey, .pdb не включаем.
+          Copy-Item 'bin\Release\drU6-XRPC.exe' -Destination $stage -Force
+          Get-ChildItem 'bin\Release\*.dll' | Copy-Item -Destination $stage -Force
+
+          $files = Get-ChildItem $stage -File | Sort-Object Name | ForEach-Object { $_.Name }
+          $ddf = @(
+            '.OPTION EXPLICIT',
+            '.Set CabinetNameTemplate=dru-xrpc.cab',
+            '.Set DiskDirectoryTemplate=..\',
+            '.Set CompressionType=LZX',
+            '.Set CompressionMemory=21',
+            ''
+          ) + ($files | ForEach-Object { '"' + $_ + '"' })
+          [IO.File]::WriteAllText((Join-Path $stage 'pkg.ddf'), ($ddf -join "`r`n"))
+
+          Push-Location $stage
+          try { makecab /F pkg.ddf | Out-Null } finally { Pop-Location }
+          if ($LASTEXITCODE -ne 0) { throw "makecab failed: $LASTEXITCODE" }
+
+          $cab = 'dist\dru-xrpc.cab'
+          if (-not (Test-Path $cab)) { throw "cab не создан: $cab" }
+          Write-Host "OK: $((Get-Item $cab).Length) байт"
+
+      - name: Verify cab contents (7 files)
+        shell: pwsh
+        run: |
+          $out = & "$env:SystemRoot\System32\expand.exe" -D (Join-Path $env:GITHUB_WORKSPACE 'dist\dru-xrpc.cab') 2>&1
+          $members = $out | Where-Object { $_ -match '\.(exe|dll)\s*$' } | ForEach-Object { ($_ -split ':')[-1].Trim() } | Sort-Object
+          $members | ForEach-Object { Write-Host "  $_" }
+          if ($members.Count -ne 7) { throw "Ожидалось 7 файлов в cab, найдено $($members.Count)" }
 
       - name: Upload CAB artifact
         uses: actions/upload-artifact@v4
