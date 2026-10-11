@@ -17,8 +17,7 @@ namespace trade {
         private Excel.Sheets _sheets;
         private bool _disposed;
 
-        private ExcelFile()
-        {
+        private ExcelFile() {
         }
 
         #region | Properties |
@@ -35,9 +34,8 @@ namespace trade {
         /// <summary>
         /// Открывает книгу в Excel только для чтения.
         /// </summary>
-        /// <param name="fileName">Полный путь к файлу .xls</param>
-        public static ExcelFile Open(string fileName)
-        {
+        /// <param name="fileName">Полный путь к файлу .xlsx</param>
+        public static ExcelFile Open(string fileName) {
             if (string.IsNullOrEmpty(fileName))
                 throw new ArgumentException("Не задан путь к Excel-файлу.", "fileName");
 
@@ -47,8 +45,7 @@ namespace trade {
                     "\r\n\r\nПроверьте путь в App.config (раздел appSettings).", fileName);
 
             ExcelFile file = new ExcelFile();
-            try
-            {
+            try {
                 file._application = new Excel.ApplicationClass();
                 file._application.Visible = false;
                 file._application.DisplayAlerts = false;
@@ -57,8 +54,7 @@ namespace trade {
                 file._sheets = file._workbook.Worksheets;
                 return file;
             }
-            catch
-            {
+            catch {
                 file.Dispose();
                 throw;
             }
@@ -67,10 +63,8 @@ namespace trade {
         /// <summary>
         /// Лист по индексу (с 1). Листы кэшируются, чтобы не плодить COM-обёртки.
         /// </summary>
-        public Excel.Worksheet GetSheet(int index)
-        {
-            while (_openedSheets.Count < index)
-            {
+        public Excel.Worksheet GetSheet(int index) {
+            while (_openedSheets.Count < index) {
                 _openedSheets.Add((Excel.Worksheet)_sheets.get_Item(_openedSheets.Count + 1));
             }
             return _openedSheets[index - 1];
@@ -79,16 +73,14 @@ namespace trade {
         /// <summary>
         /// Имя листа по индексу (с 1).
         /// </summary>
-        public string GetSheetName(int index)
-        {
+        public string GetSheetName(int index) {
             return GetSheet(index).Name;
         }
 
         /// <summary>
         /// Сырое значение ячейки: null — если ячейка пуста (как в исходном коде).
         /// </summary>
-        public static object GetCellValue(Excel.Worksheet sheet, int row, int column)
-        {
+        public static object GetCellValue(Excel.Worksheet sheet, int row, int column) {
             Excel.Range range = sheet.Cells[row, column] as Excel.Range;
             return range == null ? null : range.Value2;
         }
@@ -96,8 +88,7 @@ namespace trade {
         /// <summary>
         /// Значение ячейки в виде строки; пустая ячейка — пустая строка (не бросает исключений).
         /// </summary>
-        public static string GetCell(Excel.Worksheet sheet, int row, int column)
-        {
+        public static string GetCell(Excel.Worksheet sheet, int row, int column) {
             object value = GetCellValue(sheet, row, column);
             return value == null ? string.Empty : value.ToString().Trim();
         }
@@ -105,26 +96,22 @@ namespace trade {
         /// <summary>
         /// Закрывает книгу, гасит Excel и освобождает COM-объекты. Повторный вызов игнорируется.
         /// </summary>
-        public void Dispose()
-        {
+        public void Dispose() {
             if (_disposed)
                 return;
             _disposed = true;
 
             // Освобождаем листы до закрытия книги
-            for (int i = 0; i < _openedSheets.Count; i++)
-            {
+            for (int i = 0; i < _openedSheets.Count; i++) {
                 ReleaseComObject(_openedSheets[i]);
             }
             _openedSheets.Clear();
 
-            try
-            {
+            try {
                 if (_workbook != null)
                     _workbook.Close(Type.Missing, Type.Missing, Type.Missing);
             }
-            catch
-            {
+            catch {
                 // Книга могла быть уже закрыта/изменена — всё равно гасим Excel ниже
             }
 
@@ -134,13 +121,11 @@ namespace trade {
             ReleaseComObject(_workbook);
             _workbook = null;
 
-            try
-            {
+            try {
                 if (_application != null)
                     _application.Quit();
             }
-            catch
-            {
+            catch {
             }
 
             ReleaseComObject(_application);

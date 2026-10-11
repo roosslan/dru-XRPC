@@ -59,4 +59,4 @@ namespace trade {
         [XmlRpcMember(Member = "field_oshinov")]
         public XmlRpcStruct[] _Oshinov { get; set; }
     }
-}
+}
