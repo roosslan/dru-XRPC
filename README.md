@@ -1,8 +1,6 @@
-# drU6-XRPC
-
 Программа для импорта Excel-таблиц в Drupal по XML-RPC
-(C# / .NET Framework 4.0). Создаёт и обновляет узлы на сайте
-через модуль Drupal Services; подпись запросов — HMAC-SHA256.
+(C# / .NET Framework 4.0).
+Создаёт и обновляет узлы на сайте через модуль Drupal Services; подпись запросов — HMAC-SHA256.
 
 ![drU6-XRPC](dru-xrpc.gif)
 
@@ -23,8 +21,7 @@
 
 ## Настройки
 
-Настройки подключения находятся в файлел `App.config`:
-
-* `Drupal.ServiceUrl`, `Drupal.ServiceDomain`, `Drupal.ServiceKey` — endpoint
+Настройки подключения находятся в файле App.config:
+`Drupal.ServiceUrl`, `Drupal.ServiceDomain`, `Drupal.ServiceKey` — endpoint
   Drupal и ключ подписи HMAC
 
